@@ -205,7 +205,7 @@ pub struct Clash {
     pub path: std::path::PathBuf,
     pub config: std::path::PathBuf,
     pub instence: Option<Child>,
-    pub smartdns_instence: Option<Child>,
+    // pub smartdns_instence: Option<Child>,
 }
 
 #[derive(Debug)]
@@ -254,7 +254,7 @@ impl Default for Clash {
                 .unwrap()
                 .join("bin/core/config.yaml"),
             instence: None,
-            smartdns_instence: None,
+            // smartdns_instence: None,
         }
     }
 }
