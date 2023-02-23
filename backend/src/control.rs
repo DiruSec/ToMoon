@@ -205,7 +205,7 @@ pub struct Clash {
     pub path: std::path::PathBuf,
     pub config: std::path::PathBuf,
     pub instence: Option<Child>,
-    pub smartdns_instence: Option<Child>,
+    // pub smartdns_instence: Option<Child>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -254,7 +254,7 @@ impl Default for Clash {
                 .unwrap()
                 .join("bin/core/config.yaml"),
             instence: None,
-            smartdns_instence: None,
+            // smartdns_instence: None,
         }
     }
 }
@@ -324,25 +324,25 @@ impl Clash {
         let outputs = fs::File::create("/tmp/tomoon.clash.log").unwrap();
         let errors = outputs.try_clone().unwrap();
 
-        let smartdns_path = get_current_working_dir()
-            .unwrap()
-            .join("bin/smartdns/smartdns");
+        // let smartdns_path = get_current_working_dir()
+        //     .unwrap()
+        //     .join("bin/smartdns/smartdns");
 
-        let smartdns_config_path = get_current_working_dir()
-            .unwrap()
-            .join("bin/smartdns/config.conf");
+        // let smartdns_config_path = get_current_working_dir()
+        //     .unwrap()
+        //     .join("bin/smartdns/config.conf");
 
         // let smartdns_outputs = fs::File::create("/tmp/tomoon.smartdns.log").unwrap();
         // let smartdns_errors = outputs.try_clone().unwrap();
 
         // 启动 SmartDNS 作为 DNS 上游
-        let smart_dns = Command::new(smartdns_path)
-            .arg("-c")
-            .arg(smartdns_config_path)
-            .arg("-f")
-            // .stdout(smartdns_outputs)
-            // .stderr(smartdns_errors)
-            .spawn();
+        // let smart_dns = Command::new(smartdns_path)
+        //     .arg("-c")
+        //     .arg(smartdns_config_path)
+        //     .arg("-f")
+        //     // .stdout(smartdns_outputs)
+        //     // .stderr(smartdns_errors)
+        //     .spawn();
 
         let clash = Command::new(self.path.clone())
             .arg("-f")
@@ -359,7 +359,7 @@ impl Clash {
             }
         };
         self.instence = Some(clash.unwrap());
-        self.smartdns_instence = Some(smart_dns.unwrap());
+        // self.smartdns_instence = Some(smart_dns.unwrap());
         Ok(())
     }
 
@@ -389,16 +389,16 @@ impl Clash {
                 log::error!("Error occurred while disabling Clash: Not launch Clash yet");
             }
         };
-        let smartdns_instance = self.smartdns_instence.as_mut();
-        match smartdns_instance {
-            Some(x) => {
-                x.kill()?;
-                x.wait()?;
-            }
-            None => {
-                log::error!("Error occurred while disabling SmartDNS : Not launch SmartDNS yet");
-            }
-        };
+        // let smartdns_instance = self.smartdns_instence.as_mut();
+        // match smartdns_instance {
+        //     Some(x) => {
+        //         x.kill()?;
+        //         x.wait()?;
+        //     }
+        //     None => {
+        //         log::error!("Error occurred while disabling SmartDNS : Not launch SmartDNS yet");
+        //     }
+        // };
         Ok(())
     }
 
@@ -469,34 +469,35 @@ impl Clash {
         let tun_config = "
         enable: true
         stack: system
+        dns-hijack:
+          - any:53
         auto-route: true
         auto-detect-interface: true
         ";
 
         //部分配置来自 https://www.xkww3n.cyou/2022/02/08/use-clash-dns-anti-dns-hijacking/
-
-        let dns_config = match helper::is_resolve_running() {
-            true => {
-                "
-        enable: true
-        listen: 0.0.0.0:5354
-        enhanced-mode: fake-ip
-        fake-ip-range: 198.18.0.1/16
-        nameserver:
-            - tcp://127.0.0.1:5353
-        "
-            }
-            false => {
-                "
+        let dns_config = "
         enable: true
         listen: 0.0.0.0:53
+        nameserver:
+          - https://doh.pub/dns-query
+          - https://dns.alidns.com/dns-query
+        fallback:
+          - https://cloudflare-dns.com/dns-query
+          - 8.8.8.8
         enhanced-mode: fake-ip
         fake-ip-range: 198.18.0.1/16
-        nameserver:
-            - tcp://127.0.0.1:5353
-        "
-            }
-        };
+        fake-ip-filter:
+          - '*.lan'
+          - 'production.vrdesktop.net'
+          - 'w0.vanillicon.com'
+          - 'test.steampowered.com'
+        fallback-filter:
+          geoip: true
+          geoip-code: CN
+          ipcidr:
+            - 240.0.0.0/4
+        ";
 
         let profile_config = "
         store-selected: true
